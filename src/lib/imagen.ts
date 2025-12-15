@@ -21,9 +21,9 @@ export async function generateBackgroundImage(): Promise<string> {
 
   const fullPrompt = `${prompt}, suitable as background for text overlay, no text or letters in image, soft and not too busy, professional photography style`;
 
-  // Use the Gemini API REST endpoint for Imagen 3
+  // Use the Gemini API REST endpoint for Imagen 4
   const response = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict',
+    'https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict',
     {
       method: 'POST',
       headers: {
@@ -34,7 +34,7 @@ export async function generateBackgroundImage(): Promise<string> {
         instances: [{ prompt: fullPrompt }],
         parameters: {
           sampleCount: 1,
-          aspectRatio: "4:5"
+          aspectRatio: "3:4"  // Closest to Instagram's 4:5, will crop in overlay
         }
       })
     }
