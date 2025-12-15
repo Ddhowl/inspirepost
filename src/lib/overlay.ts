@@ -35,35 +35,25 @@ export async function createQuoteImage(
 }
 
 function createTextOverlaySvg(quote: string, author: string): string {
-  const wrappedQuote = wrapText(quote, 28);
+  const wrappedQuote = wrapText(quote, 30);
   const lines = wrappedQuote.split('\n');
-  const lineHeight = 72;
-  const totalTextHeight = lines.length * lineHeight + 100; // +100 for author
-  const startY = (HEIGHT - totalTextHeight) / 2 + 50;
+  const lineHeight = 70;
+  const totalTextHeight = lines.length * lineHeight + 120;
+  const startY = (HEIGHT - totalTextHeight) / 2 + 60;
 
   const quoteLines = lines.map((line, i) => {
     const y = startY + (i * lineHeight);
-    return `<text x="540" y="${y}" text-anchor="middle"
-      font-family="Georgia, serif" font-size="54" font-style="italic"
-      fill="white" filter="url(#shadow)">"${i === 0 ? '' : ''}${line}${i === lines.length - 1 ? '' : ''}"</text>`;
+    const displayLine = i === 0 ? `"${line}` : (i === lines.length - 1 ? `${line}"` : line);
+    return `<text x="540" y="${y}" text-anchor="middle" font-family="serif" font-size="48" font-style="italic" fill="white" stroke="black" stroke-width="2">${escapeXml(displayLine)}</text>`;
   }).join('\n');
 
-  const authorY = startY + (lines.length * lineHeight) + 60;
+  const authorY = startY + (lines.length * lineHeight) + 50;
 
-  return `
-    <svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="2" dy="2" stdDeviation="4" flood-color="black" flood-opacity="0.7"/>
-        </filter>
-      </defs>
-      <rect width="100%" height="100%" fill="rgba(0,0,0,0.3)"/>
-      ${quoteLines}
-      <text x="540" y="${authorY}" text-anchor="middle"
-        font-family="Georgia, serif" font-size="36"
-        fill="white" filter="url(#shadow)">— ${author}</text>
-    </svg>
-  `;
+  return `<svg width="${WIDTH}" height="${HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100%" height="100%" fill="rgba(0,0,0,0.35)"/>
+    ${quoteLines}
+    <text x="540" y="${authorY}" text-anchor="middle" font-family="sans-serif" font-size="32" fill="white" stroke="black" stroke-width="1">— ${escapeXml(author)}</text>
+  </svg>`;
 }
 
 function wrapText(text: string, maxCharsPerLine: number): string {
@@ -82,4 +72,13 @@ function wrapText(text: string, maxCharsPerLine: number): string {
   if (currentLine) lines.push(currentLine);
 
   return lines.join('\n');
+}
+
+function escapeXml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
