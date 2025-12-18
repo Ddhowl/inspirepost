@@ -45,9 +45,9 @@ Automated system for generating and publishing inspirational quote images to Ins
 **Goal:** Build 7-day content queue with approval workflow
 
 ### Database Setup (Supabase)
-- [ ] Create Supabase project
-- [ ] Set up Supabase CLI and link project
-- [ ] Create Content Item table with schema:
+- [x] Create Supabase project
+- [x] Set up Supabase CLI and link project
+- [x] Create Content Item table with schema:
   ```
   {
     id, quote, author, source ('curated'|'ai_generated'),
@@ -56,6 +56,13 @@ Automated system for generating and publishing inspirational quote images to Ins
     instagramPostId, createdAt, approvedAt, publishedAt, errorMessage
   }
   ```
+
+### API Routes (Supabase Integration)
+- [x] Create Supabase client lib (`src/lib/supabase.ts`)
+- [x] Build content save API (`POST /api/content`)
+- [x] Build content list API (`GET /api/content`)
+- [x] Build content update API (`PATCH /api/content/[id]`)
+- [x] Update generate endpoint to save to DB (`?save=true`)
 
 ### Content Generation Service
 - [ ] Build content generation service (auto-generates candidates)
