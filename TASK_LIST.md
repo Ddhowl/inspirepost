@@ -6,36 +6,38 @@ Automated system for generating and publishing inspirational quote images to Ins
 **Website:** davetest.drewhowlett.com
 **Posting Schedule:** 3x/week (Tue/Wed/Thu, 9-11 AM)
 **Content Mix:** 60% curated quotes, 40% AI-generated
+**Image Generation:** Gemini 3 Pro Preview (Nano Banana Pro)
 
 ---
 
-## Phase 0: Proof of Concept (POC)
+## Phase 0: Proof of Concept (POC) ✅ COMPLETE
 **Goal:** Validate core generation pipeline on davetest.drewhowlett.com
 
 ### Setup & Configuration
-- [ ] Set up Google AI Studio account and generate Imagen 3 API key
-- [ ] Create new Next.js project in GitHub repo
-- [ ] Configure Vercel deployment for davetest.drewhowlett.com
+- [x] Set up Google AI Studio account and generate Gemini API key
+- [x] Create new Next.js project in GitHub repo
+- [x] Configure Vercel deployment for davetest.drewhowlett.com
 
 ### Quote Service
-- [ ] Build quote fetching service
-- [ ] Integrate ZenQuotes API
-- [ ] Integrate Quotable API (quotable.io)
+- [x] Build quote fetching service
+- [x] Integrate ZenQuotes API
+- [x] Integrate Quotable API (quotable.io)
 
 ### Image Generation
-- [ ] Build Imagen 3 integration for background generation
-- [ ] Implement text overlay system using Sharp or Canvas
-- [ ] Configure image output: JPEG format, 1080x1350px (4:5 portrait)
+- [x] Build Gemini 3 Pro integration for image generation with embedded text
+- [x] Configure image output: JPEG format, 1080x1350px (4:5 portrait)
+- [x] Text is rendered directly by Gemini 3 Pro (no separate overlay needed)
 
 ### POC Website
-- [ ] Create simple webpage displaying generated quote image
-- [ ] Add 'Generate New' button for testing iterations
+- [x] Create simple webpage displaying generated quote image
+- [x] Add 'Generate New' button for testing iterations
+- [x] Add "Show Prompt" button to view the prompt sent to Gemini
 - [ ] Test and refine image generation prompts for consistent quality
 
 ### POC Success Criteria
-- [ ] Can generate quote + image on demand via website
-- [ ] Images are consistently nature-themed with readable text
-- [ ] Output format is JPEG at correct dimensions (1080x1350)
+- [x] Can generate quote + image on demand via website
+- [x] Images are consistently nature-themed with readable text
+- [x] Output format is JPEG at correct dimensions (1080x1350)
 
 ---
 
@@ -127,7 +129,7 @@ Automated system for generating and publishing inspirational quote images to Ins
 ## Environment Variables Required
 
 ```
-# Google AI / Imagen 3
+# Google AI / Gemini 3 Pro
 GEMINI_API_KEY=
 
 # Instagram Platform API
@@ -153,7 +155,7 @@ ALERT_EMAIL=
 ## Estimated Monthly Costs
 | Service | Cost |
 |---------|------|
-| Imagen 3 (12 images/month @ $0.03) | $0.36 |
+| Gemini 3 Pro (12 images/month @ ~$0.04) | $0.50 |
 | Vercel Hobby (free tier) | $0.00 |
 | Vercel KV (free tier) | $0.00 |
 | Quote APIs (free tiers) | $0.00 |
@@ -165,4 +167,5 @@ ALERT_EMAIL=
 ## Progress Log
 | Date | Milestone | Notes |
 |------|-----------|-------|
-| <!-- Add progress entries here --> | | |
+| 2025-12-17 | Phase 0 Complete | Switched to Gemini 3 Pro for text-in-image generation |
+| | | POC website live with generate button and prompt viewer |
