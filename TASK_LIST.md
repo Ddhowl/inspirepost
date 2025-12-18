@@ -73,10 +73,10 @@ Automated system for generating and publishing inspirational quote images to Ins
 - [ ] Add API Ninjas as backup quote source (optional)
 
 ### Preview Website UI
-- [ ] Create 7-day calendar preview UI on website
-- [ ] Implement approval/rejection buttons for each item
-- [ ] Add 'regenerate' option for rejected content
-- [ ] Show scheduled date/time for each content item
+- [x] Create 7-day calendar preview UI on website
+- [x] Implement approval/rejection buttons for each item
+- [x] Add 'regenerate' option for rejected content
+- [x] Show scheduled date/time for each content item
 
 ### Queue Management
 - [ ] Build queue management logic (auto-fill to 7 days)
