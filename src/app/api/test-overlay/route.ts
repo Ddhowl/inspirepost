@@ -1,37 +1,56 @@
+import { NextResponse } from 'next/server';
 import sharp from 'sharp';
 
 const WIDTH = 1080;
 const HEIGHT = 1350;
 
-export async function createQuoteImage(
-  backgroundBase64: string,
-  quoteText: string,
-  author: string
-): Promise<Buffer> {
-  // Decode base64 background
-  const backgroundBuffer = Buffer.from(backgroundBase64, 'base64');
-
-  // Resize background to target dimensions
-  const background = await sharp(backgroundBuffer)
-    .resize(WIDTH, HEIGHT, { fit: 'cover' })
-    .toBuffer();
-
-  // Create text overlay SVG
-  const svg = createTextOverlaySvg(quoteText, author);
-
-  // Composite text over background
-  const result = await sharp(background)
-    .composite([
-      {
-        input: Buffer.from(svg),
-        top: 0,
-        left: 0,
+// Test endpoint - uses solid color background instead of Imagen API
+// Cost: $0
+export async function GET() {
+  try {
+    // Create a gradient-like background (no API call needed)
+    const background = await sharp({
+      create: {
+        width: WIDTH,
+        height: HEIGHT,
+        channels: 3,
+        background: { r: 60, g: 100, b: 140 }
       }
-    ])
-    .jpeg({ quality: 90 })
-    .toBuffer();
+    }).jpeg().toBuffer();
 
-  return result;
+    // Test quote
+    const quote = "The only way to do great work is to love what you do.";
+    const author = "Steve Jobs";
+
+    // Create text overlay SVG
+    const svg = createTextOverlaySvg(quote, author);
+
+    // Composite text over background
+    const result = await sharp(background)
+      .composite([
+        {
+          input: Buffer.from(svg),
+          top: 0,
+          left: 0,
+        }
+      ])
+      .jpeg({ quality: 90 })
+      .toBuffer();
+
+    // Return image directly
+    return new NextResponse(new Uint8Array(result), {
+      headers: {
+        'Content-Type': 'image/jpeg',
+        'Cache-Control': 'no-store'
+      }
+    });
+  } catch (error) {
+    console.error('Test overlay error:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
 }
 
 function createTextOverlaySvg(quote: string, author: string): string {
@@ -43,6 +62,7 @@ function createTextOverlaySvg(quote: string, author: string): string {
   const quoteLines = lines.map((line, i) => {
     const y = startY + (i * lineHeight);
     const displayLine = i === 0 ? `"${line}` : (i === lines.length - 1 ? `${line}"` : line);
+    // Using DejaVu fonts which are available on Linux/Vercel
     return `<text x="540" y="${y}" text-anchor="middle" font-family="DejaVu Serif, Liberation Serif, Times New Roman, serif" font-size="64" font-style="italic" fill="white" stroke="black" stroke-width="3">${escapeXml(displayLine)}</text>`;
   }).join('\n');
 
