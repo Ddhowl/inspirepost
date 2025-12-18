@@ -4,7 +4,7 @@
 Automated system for generating and publishing inspirational quote images to Instagram.
 
 **Website:** davetest.drewhowlett.com
-**Posting Schedule:** 3x/week (Tue/Wed/Thu, 9-11 AM)
+**Posting Schedule:** 3x/week (Tue/Wed/Thu, 9 AM - 12 PM local time)
 **Content Mix:** 60% curated quotes, 40% AI-generated
 **Image Generation:** Gemini 3 Pro Preview (Nano Banana Pro)
 
@@ -20,7 +20,7 @@ Automated system for generating and publishing inspirational quote images to Ins
 
 ### Quote Service
 - [x] Build quote fetching service
-- [x] Integrate ZenQuotes API
+- [x] Integrate ZenQuotes API (with attribution)
 - [x] Integrate Quotable API (quotable.io)
 
 ### Image Generation
@@ -46,21 +46,34 @@ Automated system for generating and publishing inspirational quote images to Ins
 
 ### Database Setup
 - [ ] Set up database (Vercel KV or Supabase)
-- [ ] Implement Content Item data model
+- [ ] Implement Content Item data model:
+  ```
+  {
+    id, quote, author, source ('curated'|'ai_generated'),
+    imageUrl, imageBase64, scheduledDate, scheduledTime,
+    status ('pending'|'approved'|'rejected'|'published'|'failed'),
+    instagramPostId, createdAt, approvedAt, publishedAt, errorMessage
+  }
+  ```
 
 ### Content Generation Service
 - [ ] Build content generation service (auto-generates candidates)
-- [ ] Integrate AI-generated quotes (Claude API or similar)
+- [ ] Integrate AI-generated quotes (Claude API)
+  - Themes: mindfulness, gratitude, resilience, growth mindset, inner peace
+  - Style: Concise (under 150 characters), original, non-attributed
 - [ ] Implement hybrid content mix (60% curated, 40% AI)
+- [ ] Add API Ninjas as backup quote source (optional)
 
 ### Preview Website UI
 - [ ] Create 7-day calendar preview UI on website
 - [ ] Implement approval/rejection buttons for each item
 - [ ] Add 'regenerate' option for rejected content
+- [ ] Show scheduled date/time for each content item
 
 ### Queue Management
 - [ ] Build queue management logic (auto-fill to 7 days)
 - [ ] Set up local scheduler (node-cron) for queue management
+- [ ] Auto-replenish queue when items are approved/rejected
 
 ### Phase 1 Success Criteria
 - [ ] Website shows next 7 days of content
@@ -73,25 +86,37 @@ Automated system for generating and publishing inspirational quote images to Ins
 **Goal:** Enable automated posting to Instagram
 
 ### Instagram Account Setup
-- [ ] Convert Instagram account to Creator/Business
-- [ ] Create Meta Developer App
-- [ ] Configure OAuth redirect URIs
-- [ ] Request required permissions (instagram_business_basic, instagram_business_content_publish)
+- [ ] Convert Instagram account to Creator/Business account
+- [ ] Select appropriate category (Digital Creator, Personal Blog, etc.)
+- [ ] Complete profile setup
+
+### Meta Developer App Setup
+- [ ] Create Meta Developer App at developers.facebook.com
+- [ ] Select 'Business' as app type
+- [ ] Add Instagram API product to app
+- [ ] Configure OAuth redirect URIs (https://davetest.drewhowlett.com/api/auth/callback)
+- [ ] Request required permissions:
+  - instagram_business_basic
+  - instagram_business_content_publish
+- [ ] Complete App Review process for production access
 
 ### Instagram API Integration
 - [ ] Implement Instagram OAuth flow
-- [ ] Store Instagram access tokens securely
-- [ ] Build Instagram Content Publishing integration
-- [ ] Implement media container creation flow
+- [ ] Store Instagram access tokens securely (encrypted in database)
+- [ ] Build Instagram Content Publishing integration:
+  - Step 1: Create media container (POST /{ig-user-id}/media)
+  - Step 2: Wait for processing (~10 seconds)
+  - Step 3: Publish container (POST /{ig-user-id}/media_publish)
+- [ ] Handle rate limits (25 posts per 24 hours)
 
 ### Content & Posting
 - [ ] Add caption generation with hashtags
 - [ ] Build local scheduler for posting (node-cron)
-- [ ] Configure optimal posting times (Tue/Wed/Thu 9-11 AM)
+- [ ] Configure optimal posting times (Tue/Wed/Thu 9 AM - 12 PM)
 
 ### Error Handling & Notifications
 - [ ] Implement error handling and retry logic
-- [ ] Set up email notifications for failures
+- [ ] Set up email notifications for failures (SendGrid/Resend)
 - [ ] Test end-to-end posting workflow
 
 ### Phase 2 Success Criteria
@@ -107,10 +132,13 @@ Automated system for generating and publishing inspirational quote images to Ins
 ### Scheduler Migration
 - [ ] Migrate scheduler to GitHub Actions workflows
 - [ ] OR Configure Vercel Cron Jobs
-- [ ] Set up scheduled triggers: content generation (daily), posting (3x/week)
+- [ ] Set up scheduled triggers:
+  - Content generation: daily
+  - Posting: 3x/week (Tue/Wed/Thu)
 
 ### Token & Auth Management
-- [ ] Implement token refresh automation (Instagram tokens expire)
+- [ ] Implement token refresh automation (Instagram tokens expire after 60 days)
+- [ ] Set up token expiry monitoring and alerts
 
 ### Monitoring & Operations
 - [ ] Add monitoring dashboard for job status
@@ -126,6 +154,14 @@ Automated system for generating and publishing inspirational quote images to Ins
 
 ---
 
+## Branding Guidelines (from PRD)
+- **Fonts**: Playfair Display (quotes), Montserrat (attribution) - handled by Gemini 3 Pro
+- **Color Palette**: Earthy tones - forest greens, sky blues, warm sunset oranges, soft neutrals
+- **Text Placement**: Centered with semi-transparent overlay for readability
+- **Watermark**: Subtle account handle in corner (optional, future feature)
+
+---
+
 ## Environment Variables Required
 
 ```
@@ -137,11 +173,17 @@ INSTAGRAM_APP_ID=
 INSTAGRAM_APP_SECRET=
 INSTAGRAM_REDIRECT_URI=https://davetest.drewhowlett.com/api/auth/callback
 
-# Quote APIs (optional)
-API_NINJAS_KEY=
+# Quote APIs
+API_NINJAS_KEY= (optional)
+
+# AI Quote Generation
+ANTHROPIC_API_KEY= (for Claude API)
 
 # Database
-KV_URL=
+KV_URL= (Vercel KV)
+# OR
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
 
 # Notifications
 SMTP_HOST=
@@ -159,6 +201,7 @@ ALERT_EMAIL=
 | Vercel Hobby (free tier) | $0.00 |
 | Vercel KV (free tier) | $0.00 |
 | Quote APIs (free tiers) | $0.00 |
+| Claude API (optional, ~$0.01/quote) | $0.15 |
 | Email notifications (free tier) | $0.00 |
 | **Total** | **< $1.00/month** |
 

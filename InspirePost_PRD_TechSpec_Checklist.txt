@@ -1,0 +1,211 @@
+
+InspirePost
+Automated Inspirational Quote Instagram Publisher
+
+Product Requirements Document
+Technical Specification
+Implementation Checklist
+
+Version 1.0
+December 2025
+Prepared for: David
+
+
+PART 1: PRODUCT REQUIREMENTS DOCUMENT
+1.1 Executive Summary
+InspirePost is an automated system for generating and publishing inspirational quote images to Instagram. The system combines curated wisdom quotes with AI-generated original content, creates visually appealing nature-themed images with embedded text using Google's Gemini 3 Pro Preview API (Nano Banana Pro), and manages a 7-day content queue with scheduled posting capabilities.
+1.2 Product Vision
+Build an automated, approval-based workflow that generates high-quality inspirational content, creates beautiful nature-themed images, maintains a rolling 7-day content preview on a Vercel-hosted website, and publishes approved content to Instagram at optimal engagement times.
+1.3 Target Audience
+� Primary: Instagram users seeking daily inspiration and motivation
+� Secondary: Personal development enthusiasts, mindfulness practitioners
+� Theme: General life wisdom (philosophy, motivation, mindfulness, success)
+1.4 Content Strategy
+1.4.1 Quote Sources (Hybrid Approach)
+Curated Quotes (60%):
+� ZenQuotes API - Free tier with attribution, excellent quality inspirational quotes
+� Quotable API (quotable.io) - Open source, 180 requests/minute, filterable by tags
+� API Ninjas Quotes - Categorized quotes (wisdom, inspirational, success, philosophy)
+AI-Generated Original Content (40%):
+� Generated using Claude API or similar LLM
+� Themes: mindfulness, gratitude, resilience, growth mindset, inner peace
+� Style: Concise (under 150 characters), original, non-attributed
+1.4.2 Posting Schedule
+� Frequency: 3 posts per week
+� Recommended Days: Tuesday, Wednesday, Thursday (highest engagement per research)
+� Optimal Times: 9:00 AM - 12:00 PM local time (late morning peak engagement)
+� Content Queue: Always maintain 7 days of approved content ready for posting
+1.5 Visual Design Requirements
+1.5.1 Image Specifications
+� Format: JPEG (required by Instagram API)
+� Aspect Ratio: 4:5 portrait (1080x1350px) - optimal for Instagram feed
+� Background Theme: Nature-inspired (forests, mountains, ocean, sunrise/sunset, meadows)
+1.5.2 Branding Guidelines
+� Font: Consistent across all posts (recommend: Playfair Display for quotes, Montserrat for attribution)
+� Color Palette: Earthy tones - forest greens, sky blues, warm sunset oranges, soft neutrals
+� Text Placement: Centered with semi-transparent overlay for readability
+� Watermark: Subtle account handle in corner (optional)
+1.6 Functional Requirements
+1. Quote Generation: System shall fetch curated quotes from APIs and generate original AI content
+2. Image Generation: System shall use Gemini 3 Pro Preview API to create nature-themed images with embedded quote text
+3. Preview Website: System shall display 7-day content queue on davetest.drewhowlett.com
+4. Approval Workflow: User must approve content before it enters the publishing queue
+5. Scheduling: System shall schedule posts for optimal engagement times
+6. Instagram Publishing: System shall post approved content via Instagram Content Publishing API
+7. Error Handling: System shall alert user for manual intervention on any failures
+8. Queue Management: System shall auto-replenish queue to always show 7 future days
+1.7 User Workflow
+1. System auto-generates quote + image candidates
+2. Content appears on preview website (davetest.drewhowlett.com)
+3. User reviews and approves/rejects each piece of content
+4. Approved content enters scheduled queue
+5. Scheduler posts to Instagram at optimal times
+6. User receives alerts on any failures for manual intervention
+
+
+PART 2: TECHNICAL SPECIFICATION
+2.1 System Architecture
+Architecture Pattern: Serverless with local scheduler (MVP) ? GitHub Actions/Vercel Cron (Production)
+Core Components:
+� Quote Service - Fetches/generates inspirational content
+� Image Generator - Creates visuals via Imagen 3 API
+� Content Manager - Handles queue, approval state, scheduling
+� Preview Website - Next.js app on Vercel showing 7-day queue
+� Instagram Publisher - Posts approved content via API
+� Notification Service - Alerts on failures
+2.2 API Integrations
+2.2.1 Google Gemini 3 Pro Preview API (Nano Banana Pro)
+Purpose: Generate nature-themed images with quote text embedded directly in the image
+Model: gemini-3-pro-image-preview
+Cost: ~$0.04 per image
+Setup: Google AI Studio ? Create Project ? Generate API Key
+Endpoint: https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent
+Image Generation Strategy:
+� Generate complete image with text using Gemini 3 Pro Preview
+� Text is rendered directly by the AI model (no separate overlay needed)
+� Resize to 1080x1350px using Sharp
+� Export as JPEG
+2.2.2 Instagram Content Publishing API
+API Type: Instagram Platform API (launched July 2024)
+Key Benefit: Direct Instagram login without Facebook Page requirement
+Supported Account Types: Business and Creator accounts
+Rate Limit: 25 posts per 24 hours
+Image Format: JPEG only
+Required Scopes:
+� instagram_business_basic
+� instagram_business_content_publish
+Publishing Flow:
+� Step 1: Create media container (POST /{ig-user-id}/media)
+� Step 2: Wait for Instagram to process (~10 seconds)
+� Step 3: Publish container (POST /{ig-user-id}/media_publish)
+2.2.3 Quote APIs
+APIRate LimitFeaturesNotesZenQuotes5/30 secRandom, daily, author searchAttribution required (free)Quotable180/minTags, author, length filtersOpen source, freeAPI NinjasPer plan20+ categoriesAPI key required2.3 Technology Stack
+LayerTechnologyRationaleFrontendNext.js 14+ (React)Vercel integration, SSR/SSGBackend APINext.js API RoutesServerless, same repoDatabaseVercel KV (Redis) or SupabaseServerless compatibleImage ProcessingSharp / node-canvasText overlay on imagesScheduler (MVP)Node-cron (local)Simple local schedulingScheduler (Prod)GitHub Actions / Vercel CronManaged, reliableHostingVercelGitHub auto-deployNotificationsEmail (SendGrid/Resend)Failure alerts2.4 Data Models
+2.4.1 Content Item Schema
+{   id: string,   quote: string,   author: string | null,   source: 'curated' | 'ai_generated',   imageUrl: string,   scheduledDate: Date,   scheduledTime: string,   status: 'pending' | 'approved' | 'rejected' | 'published' | 'failed',   instagramPostId: string | null,   createdAt: Date,   approvedAt: Date | null,   publishedAt: Date | null,   errorMessage: string | null }
+2.5 Prerequisites Setup Guide
+2.5.1 Instagram Account Setup
+� Open Instagram app ? Settings ? Account ? Switch to Professional Account
+� Choose 'Creator' account type (recommended for content creators)
+� Select appropriate category (e.g., 'Digital Creator', 'Personal Blog')
+� Complete profile setup
+2.5.2 Meta Developer App Setup
+� Go to developers.facebook.com ? Create App
+� Select 'Business' as app type
+� Add Instagram API product to your app
+� Configure OAuth redirect URIs
+� Request instagram_business_basic and instagram_business_content_publish permissions
+� Complete App Review process for production access
+2.5.3 Google AI Studio Setup (Imagen 3)
+� Go to aistudio.google.com
+� Sign in with Google account
+� Create new project or select existing
+� Navigate to API Keys ? Create API Key
+� Enable billing (required for image generation)
+� Store API key securely in environment variables
+
+
+PART 3: PHASED IMPLEMENTATION CHECKLIST
+Phase 0: Proof of Concept (POC)
+Goal: Validate core generation pipeline on davetest.drewhowlett.com
+Duration: 1-2 weeks
+Deployment: GitHub ? Vercel auto-deploy
+Tasks:
+1. [x] Set up Google AI Studio account and generate Gemini API key
+2. [x] Create new Next.js project in GitHub repo
+3. [x] Configure Vercel deployment for davetest.drewhowlett.com
+4. [x] Build quote fetching service (integrate ZenQuotes + Quotable APIs)
+5. [x] Build Gemini 3 Pro integration for image generation with embedded text
+6. [x] Text is rendered directly by Gemini 3 Pro (no separate overlay needed)
+7. [x] Create simple webpage displaying generated quote image
+8. [x] Add 'Generate New' button for testing iterations
+9. [ ] Test and refine image generation prompts for consistent quality
+Success Criteria:
+� Can generate quote + image on demand via website
+� Images are consistently nature-themed with readable text
+� Output format is JPEG at correct dimensions (1080x1350)
+Phase 1: MVP - Content Queue & Preview
+Goal: Build 7-day content queue with approval workflow
+Duration: 2-3 weeks
+Tasks:
+1. [ ] Set up database (Vercel KV or Supabase)
+2. [ ] Implement Content Item data model
+3. [ ] Build content generation service (auto-generates candidates)
+4. [ ] Create 7-day calendar preview UI on website
+5. [ ] Implement approval/rejection buttons for each item
+6. [ ] Add 'regenerate' option for rejected content
+7. [ ] Build queue management logic (auto-fill to 7 days)
+8. [ ] Integrate AI-generated quotes (Claude API or similar)
+9. [ ] Implement hybrid content mix (60% curated, 40% AI)
+10. [ ] Set up local scheduler (node-cron) for queue management
+Success Criteria:
+� Website shows next 7 days of content
+� User can approve/reject content items
+� System auto-replenishes queue with new candidates
+Phase 2: MVP - Instagram Integration
+Goal: Enable automated posting to Instagram
+Duration: 2-3 weeks
+Tasks:
+1. [ ] Convert Instagram account to Creator/Business
+2. [ ] Create Meta Developer App
+3. [ ] Implement Instagram OAuth flow
+4. [ ] Store Instagram access tokens securely
+5. [ ] Build Instagram Content Publishing integration
+6. [ ] Implement media container creation flow
+7. [ ] Add caption generation with hashtags
+8. [ ] Build local scheduler for posting (node-cron)
+9. [ ] Configure optimal posting times (Tue/Wed/Thu 9-11 AM)
+10. [ ] Implement error handling and retry logic
+11. [ ] Set up email notifications for failures
+12. [ ] Test end-to-end posting workflow
+Success Criteria:
+� System can post to Instagram via API
+� Approved content posts at scheduled times
+� User receives alerts on any failures
+Phase 3: Production - Managed Scheduling
+Goal: Move from local scheduler to cloud-managed scheduling
+Duration: 1-2 weeks
+Tasks:
+1. [ ] Migrate scheduler to GitHub Actions workflows
+2. [ ] OR Configure Vercel Cron Jobs
+3. [ ] Set up scheduled triggers: content generation (daily), posting (3x/week)
+4. [ ] Implement token refresh automation (Instagram tokens expire)
+5. [ ] Add monitoring dashboard for job status
+6. [ ] Set up comprehensive logging
+7. [ ] Configure backup notification channels
+8. [ ] Performance optimization and cleanup
+9. [ ] Documentation and runbook creation
+Success Criteria:
+� System runs fully automated without local processes
+� Reliable posting 3x/week at scheduled times
+� Queue always maintains 7 days of content
+Environment Variables Required
+# Google AI / Gemini 3 Pro Preview
+GEMINI_API_KEY=your_api_key  # Instagram Platform API INSTAGRAM_APP_ID=your_app_id INSTAGRAM_APP_SECRET=your_app_secret INSTAGRAM_REDIRECT_URI=https://davetest.drewhowlett.com/api/auth/callback  # Quote APIs API_NINJAS_KEY=your_key (optional)  # Database KV_URL=your_vercel_kv_url (or Supabase connection)  # Notifications SMTP_HOST=your_smtp_host SMTP_USER=your_email SMTP_PASS=your_password ALERT_EMAIL=your_alert_email
+Estimated Costs (Monthly)
+ServiceEstimated CostImagen 3 (12 images/month @ $0.03)$0.36Vercel Hobby (free tier)$0.00Vercel KV (free tier)$0.00Quote APIs (free tiers)$0.00Email notifications (free tier)$0.00Total Estimated< $1.00/month
+� End of Document �
+InspirePost - Product Documentation
+
+Page 1 of 2
+
