@@ -1,13 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { fetchRandomQuote } from '@/lib/quotes';
 import { generateImageWithText } from '@/lib/imagen';
+import { createContent } from '@/lib/supabase';
 import sharp from 'sharp';
 
 const WIDTH = 1080;
 const HEIGHT = 1350;
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const saveToDb = searchParams.get('save') === 'true';
+
     // 1. Fetch a random quote
     const quote = await fetchRandomQuote();
     console.log('Quote fetched:', quote.text, '-', quote.author);
@@ -22,9 +26,23 @@ export async function POST() {
       .jpeg({ quality: 95 })
       .toBuffer();
 
-    // 4. Return the final image with prompt info
+    // 4. Convert to base64
     const finalImageBase64 = resizedImage.toString('base64');
 
+    // 5. Optionally save to database
+    let savedItem = null;
+    if (saveToDb) {
+      savedItem = await createContent({
+        quote: quote.text,
+        author: quote.author,
+        source: quote.source === 'zenquotes' || quote.source === 'quotable' ? 'curated' : 'ai_generated',
+        image_base64: finalImageBase64,
+        prompt_used: promptUsed
+      });
+      console.log('Content saved to database:', savedItem.id);
+    }
+
+    // 6. Return the final image with prompt info
     return NextResponse.json({
       success: true,
       image: finalImageBase64,
@@ -33,7 +51,9 @@ export async function POST() {
         author: quote.author,
         source: quote.source
       },
-      promptUsed: promptUsed  // Include the prompt so user can see what was sent
+      promptUsed: promptUsed,
+      saved: saveToDb,
+      contentId: savedItem?.id || null
     });
   } catch (error) {
     console.error('Generation error:', error);

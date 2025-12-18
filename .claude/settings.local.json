@@ -30,7 +30,9 @@
       "Bash(scoop install:*)",
       "Bash(node scripts/create-tables.js:*)",
       "Bash(node scripts/test-supabase.js:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "WebFetch(domain:supabase.com)",
+      "Bash(npx supabase:*)"
     ]
   }
 }
