@@ -27,7 +27,10 @@
       "WebFetch(domain:ai.google.dev)",
       "Bash(node test-overlay.js:*)",
       "Bash(winget install:*)",
-      "Bash(scoop install:*)"
+      "Bash(scoop install:*)",
+      "Bash(node scripts/create-tables.js:*)",
+      "Bash(node scripts/test-supabase.js:*)",
+      "Bash(curl:*)"
     ]
   }
 }
