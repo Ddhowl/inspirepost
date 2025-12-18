@@ -44,9 +44,10 @@ Automated system for generating and publishing inspirational quote images to Ins
 ## Phase 1: MVP - Content Queue & Preview
 **Goal:** Build 7-day content queue with approval workflow
 
-### Database Setup
-- [ ] Set up database (Vercel KV or Supabase)
-- [ ] Implement Content Item data model:
+### Database Setup (Supabase)
+- [ ] Create Supabase project
+- [ ] Set up Supabase CLI and link project
+- [ ] Create Content Item table with schema:
   ```
   {
     id, quote, author, source ('curated'|'ai_generated'),
@@ -179,11 +180,10 @@ API_NINJAS_KEY= (optional)
 # AI Quote Generation
 ANTHROPIC_API_KEY= (for Claude API)
 
-# Database
-KV_URL= (Vercel KV)
-# OR
+# Database (Supabase)
 SUPABASE_URL=
 SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
 
 # Notifications
 SMTP_HOST=
@@ -199,7 +199,7 @@ ALERT_EMAIL=
 |---------|------|
 | Gemini 3 Pro (12 images/month @ ~$0.04) | $0.50 |
 | Vercel Hobby (free tier) | $0.00 |
-| Vercel KV (free tier) | $0.00 |
+| Supabase (free tier) | $0.00 |
 | Quote APIs (free tiers) | $0.00 |
 | Claude API (optional, ~$0.01/quote) | $0.15 |
 | Email notifications (free tier) | $0.00 |

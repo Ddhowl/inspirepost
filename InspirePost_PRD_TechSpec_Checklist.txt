@@ -100,7 +100,7 @@ Publishing Flow:
 � Step 3: Publish container (POST /{ig-user-id}/media_publish)
 2.2.3 Quote APIs
 APIRate LimitFeaturesNotesZenQuotes5/30 secRandom, daily, author searchAttribution required (free)Quotable180/minTags, author, length filtersOpen source, freeAPI NinjasPer plan20+ categoriesAPI key required2.3 Technology Stack
-LayerTechnologyRationaleFrontendNext.js 14+ (React)Vercel integration, SSR/SSGBackend APINext.js API RoutesServerless, same repoDatabaseVercel KV (Redis) or SupabaseServerless compatibleImage ProcessingSharp / node-canvasText overlay on imagesScheduler (MVP)Node-cron (local)Simple local schedulingScheduler (Prod)GitHub Actions / Vercel CronManaged, reliableHostingVercelGitHub auto-deployNotificationsEmail (SendGrid/Resend)Failure alerts2.4 Data Models
+LayerTechnologyRationaleFrontendNext.js 14+ (React)Vercel integration, SSR/SSGBackend APINext.js API RoutesServerless, same repoDatabaseSupabase (PostgreSQL)Serverless compatibleImage ProcessingSharp / node-canvasText overlay on imagesScheduler (MVP)Node-cron (local)Simple local schedulingScheduler (Prod)GitHub Actions / Vercel CronManaged, reliableHostingVercelGitHub auto-deployNotificationsEmail (SendGrid/Resend)Failure alerts2.4 Data Models
 2.4.1 Content Item Schema
 {   id: string,   quote: string,   author: string | null,   source: 'curated' | 'ai_generated',   imageUrl: string,   scheduledDate: Date,   scheduledTime: string,   status: 'pending' | 'approved' | 'rejected' | 'published' | 'failed',   instagramPostId: string | null,   createdAt: Date,   approvedAt: Date | null,   publishedAt: Date | null,   errorMessage: string | null }
 2.5 Prerequisites Setup Guide
@@ -148,7 +148,7 @@ Phase 1: MVP - Content Queue & Preview
 Goal: Build 7-day content queue with approval workflow
 Duration: 2-3 weeks
 Tasks:
-1. [ ] Set up database (Vercel KV or Supabase)
+1. [ ] Set up Supabase database and create tables
 2. [ ] Implement Content Item data model
 3. [ ] Build content generation service (auto-generates candidates)
 4. [ ] Create 7-day calendar preview UI on website
@@ -201,7 +201,8 @@ Success Criteria:
 � Queue always maintains 7 days of content
 Environment Variables Required
 # Google AI / Gemini 3 Pro Preview
-GEMINI_API_KEY=your_api_key  # Instagram Platform API INSTAGRAM_APP_ID=your_app_id INSTAGRAM_APP_SECRET=your_app_secret INSTAGRAM_REDIRECT_URI=https://davetest.drewhowlett.com/api/auth/callback  # Quote APIs API_NINJAS_KEY=your_key (optional)  # Database KV_URL=your_vercel_kv_url (or Supabase connection)  # Notifications SMTP_HOST=your_smtp_host SMTP_USER=your_email SMTP_PASS=your_password ALERT_EMAIL=your_alert_email
+GEMINI_API_KEY=your_api_key  # Instagram Platform API INSTAGRAM_APP_ID=your_app_id INSTAGRAM_APP_SECRET=your_app_secret INSTAGRAM_REDIRECT_URI=https://davetest.drewhowlett.com/api/auth/callback  # Quote APIs API_NINJAS_KEY=your_key (optional)  # Database SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_anon_key  # Notifications SMTP_HOST=your_smtp_host SMTP_USER=your_email SMTP_PASS=your_password ALERT_EMAIL=your_alert_email
 Estimated Costs (Monthly)
 ServiceEstimated CostImagen 3 (12 images/month @ $0.03)$0.36Vercel Hobby (free tier)$0.00Vercel KV (free tier)$0.00Quote APIs (free tiers)$0.00Email notifications (free tier)$0.00Total Estimated< $1.00/month
 � End of Document �

@@ -25,7 +25,9 @@
       "Bash(git push)",
       "WebSearch",
       "WebFetch(domain:ai.google.dev)",
-      "Bash(node test-overlay.js:*)"
+      "Bash(node test-overlay.js:*)",
+      "Bash(winget install:*)",
+      "Bash(scoop install:*)"
     ]
   }
 }
