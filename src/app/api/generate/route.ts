@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { fetchRandomQuote } from '@/lib/quotes';
-import { generateBackgroundImage } from '@/lib/imagen';
+import { generateImageWithText } from '@/lib/imagen';
 import sharp from 'sharp';
 
 const WIDTH = 1080;
@@ -10,28 +10,30 @@ export async function POST() {
   try {
     // 1. Fetch a random quote
     const quote = await fetchRandomQuote();
+    console.log('Quote fetched:', quote.text, '-', quote.author);
 
-    // 2. Generate background image
-    const backgroundBase64 = await generateBackgroundImage();
+    // 2. Generate image with text embedded using Gemini 3 Pro (Nano Banana Pro)
+    const { imageBase64, promptUsed } = await generateImageWithText(quote.text, quote.author);
 
-    // 3. Resize background to target dimensions (no text overlay - browser will do that)
-    const backgroundBuffer = Buffer.from(backgroundBase64, 'base64');
-    const resizedBackground = await sharp(backgroundBuffer)
+    // 3. Resize to Instagram dimensions
+    const imageBuffer = Buffer.from(imageBase64, 'base64');
+    const resizedImage = await sharp(imageBuffer)
       .resize(WIDTH, HEIGHT, { fit: 'cover' })
-      .jpeg({ quality: 90 })
+      .jpeg({ quality: 95 })
       .toBuffer();
 
-    // 4. Return the background image as base64 + quote data
-    const imageBase64 = resizedBackground.toString('base64');
+    // 4. Return the final image with prompt info
+    const finalImageBase64 = resizedImage.toString('base64');
 
     return NextResponse.json({
       success: true,
-      image: imageBase64,
+      image: finalImageBase64,
       quote: {
         text: quote.text,
         author: quote.author,
         source: quote.source
-      }
+      },
+      promptUsed: promptUsed  // Include the prompt so user can see what was sent
     });
   } catch (error) {
     console.error('Generation error:', error);

@@ -1,4 +1,4 @@
-const NATURE_PROMPTS = [
+const STYLE_PROMPTS = [
   "serene mountain landscape at golden hour with soft clouds, dreamy atmosphere, muted colors",
   "peaceful forest path with morning mist, soft sunlight filtering through trees, ethereal mood",
   "calm ocean waves at sunset with pastel sky colors, minimalist composition",
@@ -11,19 +11,45 @@ const NATURE_PROMPTS = [
   "meadow with morning dew, soft sunlight, peaceful and calming"
 ];
 
-export async function generateBackgroundImage(): Promise<string> {
-  const prompt = NATURE_PROMPTS[Math.floor(Math.random() * NATURE_PROMPTS.length)];
+export interface GenerateImageResult {
+  imageBase64: string;
+  promptUsed: string;
+}
+
+export async function generateImageWithText(quoteText: string, author: string): Promise<GenerateImageResult> {
+  const stylePrompt = STYLE_PROMPTS[Math.floor(Math.random() * STYLE_PROMPTS.length)];
   const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
     throw new Error('GEMINI_API_KEY is not configured');
   }
 
-  const fullPrompt = `${prompt}, suitable as background for text overlay, no text or letters in image, soft and not too busy, professional photography style`;
+  // Build the full prompt with the quote text embedded
+  const fullPrompt = `Create a beautiful inspirational quote image for Instagram.
 
-  // Use the Gemini API REST endpoint for Imagen 4
+BACKGROUND: ${stylePrompt}
+
+TEXT TO DISPLAY (must be rendered exactly as written, centered on the image):
+"${quoteText}"
+— ${author}
+
+REQUIREMENTS:
+- The quote text must be large, bold, and clearly legible
+- Use an elegant serif or sans-serif font in white or cream color
+- Add a subtle dark gradient or shadow behind the text for readability
+- The quote should be centered both horizontally and vertically
+- The author name should be smaller, below the quote
+- Aspect ratio should be suitable for Instagram (4:5 or 1:1)
+- The background should be soft and not distract from the text
+- Make the text the focal point of the image`;
+
+  console.log('=== GEMINI 3 PRO IMAGE PROMPT ===');
+  console.log(fullPrompt);
+  console.log('=================================');
+
+  // Use Gemini 3 Pro Preview (Nano Banana Pro) for image generation with text
   const response = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict',
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-image-preview:generateContent',
     {
       method: 'POST',
       headers: {
@@ -31,10 +57,19 @@ export async function generateBackgroundImage(): Promise<string> {
         'x-goog-api-key': apiKey,
       },
       body: JSON.stringify({
-        instances: [{ prompt: fullPrompt }],
-        parameters: {
-          sampleCount: 1,
-          aspectRatio: "3:4"  // Closest to Instagram's 4:5, will crop in overlay
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: fullPrompt }
+            ]
+          }
+        ],
+        generationConfig: {
+          responseModalities: ["TEXT", "IMAGE"],
+          imageConfig: {
+            aspectRatio: "3:4"
+          }
         }
       })
     }
@@ -42,15 +77,25 @@ export async function generateBackgroundImage(): Promise<string> {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('Imagen API error:', errorText);
-    throw new Error(`Imagen API failed: ${response.status}`);
+    console.error('Gemini 3 Pro API error:', errorText);
+    throw new Error(`Gemini 3 Pro API failed: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
+  console.log('Gemini 3 Pro response:', JSON.stringify(data, null, 2));
 
-  if (data.predictions && data.predictions.length > 0) {
-    return data.predictions[0].bytesBase64Encoded;
+  // Extract the image from the response
+  if (data.candidates && data.candidates.length > 0) {
+    const parts = data.candidates[0].content?.parts || [];
+    for (const part of parts) {
+      if (part.inlineData && part.inlineData.mimeType?.startsWith('image/')) {
+        return {
+          imageBase64: part.inlineData.data,
+          promptUsed: fullPrompt
+        };
+      }
+    }
   }
 
-  throw new Error('No image generated');
+  throw new Error('No image generated in response');
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 
 interface GeneratedContent {
   image: string;
@@ -9,101 +9,19 @@ interface GeneratedContent {
     author: string;
     source: string;
   };
+  promptUsed?: string;
 }
-
-const WIDTH = 1080;
-const HEIGHT = 1350;
 
 export default function Home() {
   const [content, setContent] = useState<GeneratedContent | null>(null);
-  const [finalImage, setFinalImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  // Render text on canvas when content changes
-  useEffect(() => {
-    if (content && canvasRef.current) {
-      renderTextOnCanvas(content);
-    }
-  }, [content]);
-
-  const renderTextOnCanvas = (data: GeneratedContent) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const img = new Image();
-    img.onload = () => {
-      // Draw background image
-      ctx.drawImage(img, 0, 0, WIDTH, HEIGHT);
-
-      // Add dark overlay
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-      ctx.fillRect(0, 0, WIDTH, HEIGHT);
-
-      // Configure text style for quote
-      ctx.textAlign = 'center';
-      ctx.fillStyle = 'white';
-      ctx.strokeStyle = 'black';
-      ctx.lineWidth = 3;
-
-      // Wrap and draw quote text
-      const lines = wrapText(ctx, data.quote.text, WIDTH - 120, 58);
-      const lineHeight = 75;
-      const totalHeight = lines.length * lineHeight + 80;
-      let startY = (HEIGHT - totalHeight) / 2 + 60;
-
-      ctx.font = 'italic 58px Georgia, "Times New Roman", serif';
-
-      lines.forEach((line, i) => {
-        const y = startY + i * lineHeight;
-        const displayLine = i === 0 ? `"${line}` : (i === lines.length - 1 ? `${line}"` : line);
-        ctx.strokeText(displayLine, WIDTH / 2, y);
-        ctx.fillText(displayLine, WIDTH / 2, y);
-      });
-
-      // Draw author
-      ctx.font = '38px Arial, sans-serif';
-      ctx.lineWidth = 2;
-      const authorY = startY + lines.length * lineHeight + 50;
-      ctx.strokeText(`— ${data.quote.author}`, WIDTH / 2, authorY);
-      ctx.fillText(`— ${data.quote.author}`, WIDTH / 2, authorY);
-
-      // Save final image
-      setFinalImage(canvas.toDataURL('image/jpeg', 0.9));
-    };
-
-    img.src = `data:image/jpeg;base64,${data.image}`;
-  };
-
-  const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number, fontSize: number): string[] => {
-    ctx.font = `italic ${fontSize}px Georgia, "Times New Roman", serif`;
-    const words = text.split(' ');
-    const lines: string[] = [];
-    let currentLine = '';
-
-    for (const word of words) {
-      const testLine = currentLine ? `${currentLine} ${word}` : word;
-      const metrics = ctx.measureText(testLine);
-      if (metrics.width > maxWidth && currentLine) {
-        lines.push(currentLine);
-        currentLine = word;
-      } else {
-        currentLine = testLine;
-      }
-    }
-    if (currentLine) lines.push(currentLine);
-
-    return lines;
-  };
+  const [showPrompt, setShowPrompt] = useState(false);
 
   const generateImage = async () => {
     setLoading(true);
     setError(null);
-    setFinalImage(null);
+    setContent(null);
 
     try {
       const response = await fetch('/api/generate', {
@@ -130,7 +48,7 @@ export default function Home() {
       <div className="container mx-auto px-4 py-12">
         <header className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-2">InspirePost</h1>
-          <p className="text-slate-400">AI-Generated Inspirational Quote Images</p>
+          <p className="text-slate-400">AI-Generated Inspirational Quote Images (Gemini 3 Pro)</p>
         </header>
 
         <div className="flex flex-col items-center gap-8">
@@ -145,7 +63,7 @@ export default function Home() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                Generating...
+                Generating with Gemini 3 Pro...
               </span>
             ) : (
               'Generate New Quote'
@@ -153,24 +71,17 @@ export default function Home() {
           </button>
 
           {error && (
-            <div className="bg-red-500/20 border border-red-500 rounded-lg px-6 py-4 text-red-200">
+            <div className="bg-red-500/20 border border-red-500 rounded-lg px-6 py-4 text-red-200 max-w-xl">
               {error}
             </div>
           )}
 
-          {/* Hidden canvas for rendering */}
-          <canvas
-            ref={canvasRef}
-            width={WIDTH}
-            height={HEIGHT}
-            className="hidden"
-          />
-
-          {finalImage && content && (
+          {content && (
             <div className="flex flex-col items-center gap-6">
+              {/* Generated image with text embedded */}
               <div className="rounded-xl overflow-hidden shadow-2xl" style={{ maxWidth: '400px' }}>
                 <img
-                  src={finalImage}
+                  src={`data:image/jpeg;base64,${content.image}`}
                   alt="Generated quote"
                   className="w-full h-auto"
                 />
@@ -182,20 +93,40 @@ export default function Home() {
                 <p className="mt-2 text-xs text-slate-500">Source: {content.quote.source}</p>
               </div>
 
-              <a
-                href={finalImage}
-                download="inspirepost-quote.jpg"
-                className="px-6 py-2 border border-slate-600 rounded-full hover:bg-slate-700 transition-colors text-sm"
-              >
-                Download Image
-              </a>
+              <div className="flex gap-4">
+                <a
+                  href={`data:image/jpeg;base64,${content.image}`}
+                  download="inspirepost-quote.jpg"
+                  className="px-6 py-2 border border-slate-600 rounded-full hover:bg-slate-700 transition-colors text-sm"
+                >
+                  Download Image
+                </a>
+
+                <button
+                  onClick={() => setShowPrompt(!showPrompt)}
+                  className="px-6 py-2 border border-purple-600 rounded-full hover:bg-purple-900/30 transition-colors text-sm text-purple-300"
+                >
+                  {showPrompt ? 'Hide Prompt' : 'Show Prompt'}
+                </button>
+              </div>
+
+              {/* Show the prompt used for generation */}
+              {showPrompt && content.promptUsed && (
+                <div className="w-full max-w-2xl bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-purple-400 mb-2">Gemini 3 Pro Prompt Used:</h3>
+                  <pre className="text-xs text-slate-300 whitespace-pre-wrap font-mono overflow-x-auto">
+                    {content.promptUsed}
+                  </pre>
+                </div>
+              )}
             </div>
           )}
 
-          {!finalImage && !loading && (
+          {!content && !loading && (
             <div className="text-center text-slate-500 mt-8">
               <p>Click the button above to generate your first inspirational quote image!</p>
-              <p className="text-sm mt-2">Images are 1080x1350px (Instagram 4:5 portrait)</p>
+              <p className="text-sm mt-2">Uses Gemini 3 Pro (Nano Banana Pro) to generate images with text</p>
+              <p className="text-sm mt-1">Images are 1080x1350px (Instagram 4:5 portrait)</p>
             </div>
           )}
         </div>
