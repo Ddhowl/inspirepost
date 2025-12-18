@@ -3,12 +3,21 @@
 import { useState, useEffect, useCallback } from 'react';
 import ContentCard, { ContentItem } from './ContentCard';
 
+interface QueueStats {
+  total: number;
+  pending: number;
+  approved: number;
+  needsGeneration: number;
+}
+
 export default function CalendarView() {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>('all');
   const [generating, setGenerating] = useState(false);
+  const [filling, setFilling] = useState(false);
+  const [queueStats, setQueueStats] = useState<QueueStats | null>(null);
 
   const fetchContent = useCallback(async () => {
     try {
@@ -29,9 +38,44 @@ export default function CalendarView() {
     }
   }, []);
 
+  const fetchQueueStats = useCallback(async () => {
+    try {
+      const response = await fetch('/api/queue');
+      const data = await response.json();
+      if (data.success) {
+        setQueueStats(data.stats);
+      }
+    } catch (err) {
+      console.error('Failed to fetch queue stats:', err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchContent();
-  }, [fetchContent]);
+    fetchQueueStats();
+  }, [fetchContent, fetchQueueStats]);
+
+  const handleFillQueue = async () => {
+    setFilling(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/queue?action=fill', { method: 'POST' });
+      const data = await response.json();
+
+      if (data.success) {
+        await fetchContent();
+        await fetchQueueStats();
+      } else {
+        setError(data.error || 'Failed to fill queue');
+      }
+    } catch (err) {
+      setError('Failed to fill queue');
+      console.error(err);
+    } finally {
+      setFilling(false);
+    }
+  };
 
   const handleApprove = async (id: string) => {
     const response = await fetch(`/api/content/${id}`, {
@@ -180,28 +224,55 @@ export default function CalendarView() {
           </button>
         </div>
 
-        <button
-          onClick={handleGenerateNew}
-          disabled={generating}
-          className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 rounded-lg font-medium transition-all flex items-center gap-2"
-        >
-          {generating ? (
-            <>
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-              </svg>
-              Generating...
-            </>
-          ) : (
-            <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Generate New
-            </>
+        <div className="flex gap-2">
+          <button
+            onClick={handleGenerateNew}
+            disabled={generating || filling}
+            className="px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 rounded-lg font-medium transition-all flex items-center gap-2"
+          >
+            {generating ? (
+              <>
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Generating...
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Generate One
+              </>
+            )}
+          </button>
+
+          {queueStats && queueStats.needsGeneration > 0 && (
+            <button
+              onClick={handleFillQueue}
+              disabled={generating || filling}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 rounded-lg font-medium transition-all flex items-center gap-2"
+            >
+              {filling ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Filling Queue...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Fill Queue ({queueStats.needsGeneration})
+                </>
+              )}
+            </button>
           )}
-        </button>
+        </div>
       </div>
 
       {/* Error message */}

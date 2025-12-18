@@ -65,11 +65,11 @@ Automated system for generating and publishing inspirational quote images to Ins
 - [x] Update generate endpoint to save to DB (`?save=true`)
 
 ### Content Generation Service
-- [ ] Build content generation service (auto-generates candidates)
-- [ ] Integrate AI-generated quotes (Claude API)
+- [x] Build content generation service (auto-generates candidates)
+- [x] Integrate AI-generated quotes (Claude API)
   - Themes: mindfulness, gratitude, resilience, growth mindset, inner peace
   - Style: Concise (under 150 characters), original, non-attributed
-- [ ] Implement hybrid content mix (60% curated, 40% AI)
+- [x] Implement hybrid content mix (60% curated, 40% AI)
 - [ ] Add API Ninjas as backup quote source (optional)
 
 ### Preview Website UI
@@ -79,9 +79,11 @@ Automated system for generating and publishing inspirational quote images to Ins
 - [x] Show scheduled date/time for each content item
 
 ### Queue Management
-- [ ] Build queue management logic (auto-fill to 7 days)
-- [ ] Set up local scheduler (node-cron) for queue management
-- [ ] Auto-replenish queue when items are approved/rejected
+- [x] Build queue management logic (auto-fill to 7 days)
+- [x] Set up local scheduler (node-cron) for queue management
+- [x] Auto-replenish queue when items are approved/rejected
+- [x] Add queue stats API (`GET /api/queue`)
+- [x] Add Fill Queue button in UI
 
 ### Phase 1 Success Criteria
 - [ ] Website shows next 7 days of content
