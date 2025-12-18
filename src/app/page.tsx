@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 interface GeneratedContent {
   image: string;
@@ -11,14 +11,99 @@ interface GeneratedContent {
   };
 }
 
+const WIDTH = 1080;
+const HEIGHT = 1350;
+
 export default function Home() {
   const [content, setContent] = useState<GeneratedContent | null>(null);
+  const [finalImage, setFinalImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  // Render text on canvas when content changes
+  useEffect(() => {
+    if (content && canvasRef.current) {
+      renderTextOnCanvas(content);
+    }
+  }, [content]);
+
+  const renderTextOnCanvas = (data: GeneratedContent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const img = new Image();
+    img.onload = () => {
+      // Draw background image
+      ctx.drawImage(img, 0, 0, WIDTH, HEIGHT);
+
+      // Add dark overlay
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+      ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+      // Configure text style for quote
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'white';
+      ctx.strokeStyle = 'black';
+      ctx.lineWidth = 3;
+
+      // Wrap and draw quote text
+      const lines = wrapText(ctx, data.quote.text, WIDTH - 120, 58);
+      const lineHeight = 75;
+      const totalHeight = lines.length * lineHeight + 80;
+      let startY = (HEIGHT - totalHeight) / 2 + 60;
+
+      ctx.font = 'italic 58px Georgia, "Times New Roman", serif';
+
+      lines.forEach((line, i) => {
+        const y = startY + i * lineHeight;
+        const displayLine = i === 0 ? `"${line}` : (i === lines.length - 1 ? `${line}"` : line);
+        ctx.strokeText(displayLine, WIDTH / 2, y);
+        ctx.fillText(displayLine, WIDTH / 2, y);
+      });
+
+      // Draw author
+      ctx.font = '38px Arial, sans-serif';
+      ctx.lineWidth = 2;
+      const authorY = startY + lines.length * lineHeight + 50;
+      ctx.strokeText(`— ${data.quote.author}`, WIDTH / 2, authorY);
+      ctx.fillText(`— ${data.quote.author}`, WIDTH / 2, authorY);
+
+      // Save final image
+      setFinalImage(canvas.toDataURL('image/jpeg', 0.9));
+    };
+
+    img.src = `data:image/jpeg;base64,${data.image}`;
+  };
+
+  const wrapText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number, fontSize: number): string[] => {
+    ctx.font = `italic ${fontSize}px Georgia, "Times New Roman", serif`;
+    const words = text.split(' ');
+    const lines: string[] = [];
+    let currentLine = '';
+
+    for (const word of words) {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      const metrics = ctx.measureText(testLine);
+      if (metrics.width > maxWidth && currentLine) {
+        lines.push(currentLine);
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    }
+    if (currentLine) lines.push(currentLine);
+
+    return lines;
+  };
 
   const generateImage = async () => {
     setLoading(true);
     setError(null);
+    setFinalImage(null);
 
     try {
       const response = await fetch('/api/generate', {
@@ -73,11 +158,19 @@ export default function Home() {
             </div>
           )}
 
-          {content && (
+          {/* Hidden canvas for rendering */}
+          <canvas
+            ref={canvasRef}
+            width={WIDTH}
+            height={HEIGHT}
+            className="hidden"
+          />
+
+          {finalImage && content && (
             <div className="flex flex-col items-center gap-6">
               <div className="rounded-xl overflow-hidden shadow-2xl" style={{ maxWidth: '400px' }}>
                 <img
-                  src={`data:image/jpeg;base64,${content.image}`}
+                  src={finalImage}
                   alt="Generated quote"
                   className="w-full h-auto"
                 />
@@ -90,7 +183,7 @@ export default function Home() {
               </div>
 
               <a
-                href={`data:image/jpeg;base64,${content.image}`}
+                href={finalImage}
                 download="inspirepost-quote.jpg"
                 className="px-6 py-2 border border-slate-600 rounded-full hover:bg-slate-700 transition-colors text-sm"
               >
@@ -99,7 +192,7 @@ export default function Home() {
             </div>
           )}
 
-          {!content && !loading && (
+          {!finalImage && !loading && (
             <div className="text-center text-slate-500 mt-8">
               <p>Click the button above to generate your first inspirational quote image!</p>
               <p className="text-sm mt-2">Images are 1080x1350px (Instagram 4:5 portrait)</p>

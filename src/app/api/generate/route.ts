@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
 import { fetchRandomQuote } from '@/lib/quotes';
 import { generateBackgroundImage } from '@/lib/imagen';
-import { createQuoteImage } from '@/lib/overlay';
+import sharp from 'sharp';
+
+const WIDTH = 1080;
+const HEIGHT = 1350;
 
 export async function POST() {
   try {
@@ -11,15 +14,15 @@ export async function POST() {
     // 2. Generate background image
     const backgroundBase64 = await generateBackgroundImage();
 
-    // 3. Create final image with text overlay
-    const imageBuffer = await createQuoteImage(
-      backgroundBase64,
-      quote.text,
-      quote.author
-    );
+    // 3. Resize background to target dimensions (no text overlay - browser will do that)
+    const backgroundBuffer = Buffer.from(backgroundBase64, 'base64');
+    const resizedBackground = await sharp(backgroundBuffer)
+      .resize(WIDTH, HEIGHT, { fit: 'cover' })
+      .jpeg({ quality: 90 })
+      .toBuffer();
 
-    // 4. Return the image as base64
-    const imageBase64 = imageBuffer.toString('base64');
+    // 4. Return the background image as base64 + quote data
+    const imageBase64 = resizedBackground.toString('base64');
 
     return NextResponse.json({
       success: true,
